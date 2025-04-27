@@ -90,7 +90,25 @@ ggplot(newdf, aes(x = X100.Million)) + geom_histogram(bins = 30, fill = "blue") 
 
 
 # Boxplots
-ggplot(newdf, aes(y = Lead.Streams)) + geom_boxplot() + ggtitle("Lead Streams Boxplot")
-
+ggplot(long_df, aes(x = Metric, y = Value, fill = Metric)) +
+  geom_boxplot(outlier.color = "red", outlier.shape = 16) +
+  scale_y_log10(labels = label_comma(big.mark = ".", decimal.mark = ",")) +  # Deutsches Format
+  labs(
+    title = "Verteilung der Spotify Artist Metriken",
+    x = "",
+    y = "Wert (log-Skala)"
+  ) +
+  scale_x_discrete(labels = c(
+    "Lead.Streams" = "Lead Streams (in Millionen)",
+    "Feats" = "Anzahl Features",
+    "Tracks" = "Anzahl Tracks",
+    "One.Billion" = "Streams in Milliarden",
+    "X100.Million" = "Streams in 100 Millionen"
+  )) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
 
 # ggplot(data = data[1: 10,]) + geom_line(mapping = aes(x = Artist.Name, y = Lead.Streams))
