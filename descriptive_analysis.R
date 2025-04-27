@@ -112,3 +112,39 @@ ggplot(long_df, aes(x = Metric, y = Value, fill = Metric)) +
   )
 
 # ggplot(data = data[1: 10,]) + geom_line(mapping = aes(x = Artist.Name, y = Lead.Streams))
+
+#---------------------------------------------------------------
+# Korrelationen - Spotify Artist Data
+#---------------------------------------------------------------
+library(vcd)        # Für Heatmaps und Mosaikplots
+library(tidycomm)   # Für einfache Korrelationsberechnungen
+library(corrplot)   # Für die Visualisierung der Korrelationen
+
+# Nur relevante numerische Variablen extrahieren
+korrelation_subset <- subset(newdf, select = c(Lead.Streams, Feats, Tracks, One.Billion, X100.Million))
+
+# Erste Korrelationsmatrix ausgeben
+korrelation_subset %>%
+  correlate() %>%
+  to_correlation_matrix()
+
+# Korrelationen visualisieren
+korrelation_subset %>%
+  correlate() %>%
+  visualize()
+
+# Klassische Korrelationsmatrix erstellen
+cor_matrix <- cor(korrelation_subset, use = "complete.obs")
+
+# Heatmap der Korrelationen zeichnen
+corrplot(cor_matrix,
+         method = "square",
+         col = colorRampPalette(c("darkblue", "white", "darkred"))(21),
+         addCoef.col = "black",
+         cl.pos = "r",
+         cl.cex = 0.8,
+         tl.col = "black",
+         tl.srt = 45,
+         title = "Heatmap der Korrelationen (Spotify Artist Data)",
+         tl.cex = 0.8,
+         number.cex = 1)
