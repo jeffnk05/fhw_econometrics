@@ -136,7 +136,10 @@ korrelation_subset %>%
 # Klassische Korrelationsmatrix erstellen
 cor_matrix <- cor(korrelation_subset, use = "complete.obs")
 
-# Heatmap der Korrelationen zeichnen
+# Grafikränder anpassen
+par(mar = c(1, 1, 5, 1))  # unten, links, oben, rechts
+
+# Heatmap erstellen
 corrplot(cor_matrix,
          method = "square",
          col = colorRampPalette(c("darkblue", "white", "darkred"))(21),
@@ -144,7 +147,6 @@ corrplot(cor_matrix,
          cl.pos = "r",
          cl.cex = 0.8,
          tl.col = "black",
-         tl.srt = 45,
-         title = "Heatmap der Korrelationen (Spotify Artist Data)",
-         tl.cex = 0.8,
+         tl.srt = 45,      
+         tl.cex = 1,      
          number.cex = 1)
