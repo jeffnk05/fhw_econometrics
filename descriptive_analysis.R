@@ -4,6 +4,8 @@ library(tidyr)
 
 df <- read.csv("./spotify_artist_data.csv")
 
+View(df)
+
 dim(df)
 
 # Check datatypes of dataframe
