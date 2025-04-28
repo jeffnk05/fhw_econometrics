@@ -1,5 +1,6 @@
 library(tidyverse)
 library(scales)
+library(tidyr)
 
 df <- read.csv("./spotify_artist_data.csv")
 
@@ -54,7 +55,7 @@ ggplot(newdf, aes(x = Feats)) + geom_histogram(bins = 30, fill = "blue") +
   scale_x_log10(
     labels = label_number(scale_cut = cut_short_scale())
   ) + 
-  geom_vline(aes(xintercept = median(X100.Million)),
+  geom_vline(aes(xintercept = median(Feats)),
              color = "red", linetype = "dashed", linewidth = 1)
   +
   labs(
@@ -67,7 +68,7 @@ ggplot(newdf, aes(x = One.Billion)) + geom_histogram(bins = 30, fill = "blue") +
   scale_x_log10(
     labels = label_number(scale_cut = cut_short_scale())
   ) +
-  geom_vline(aes(xintercept = median(X100.Million)),
+  geom_vline(aes(xintercept = median(One.Billion)),
              color = "red", linetype = "dashed", linewidth = 1) +
   labs(
     title = "Distribution of one billions streams",
@@ -88,6 +89,9 @@ ggplot(newdf, aes(x = X100.Million)) + geom_histogram(bins = 30, fill = "blue") 
     y = "Count"
   )
 
+long_df <- pivot_longer(newdf, cols = c(Lead.Streams, Feats, Tracks, One.Billion, X100.Million), 
+                      names_to = "Metric", 
+                      values_to = "Value")
 
 # Boxplots
 ggplot(long_df, aes(x = Metric, y = Value, fill = Metric)) +
