@@ -42,6 +42,10 @@ print(beta_hat)
 y_hat <- X %*% beta_hat
 u_hat <- y - y_hat
 
+# Prognosefehler berechnen
+mae <- mean(abs(u_hat))  # Mean Absolute Error
+mse <- mean(u_hat^2)     # Mean Squared Error
+
 # Modellgüte (R² & adj. R²)
 SST <- sum((y - mean(y))^2)
 SSE <- sum(u_hat^2)
