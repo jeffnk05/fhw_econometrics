@@ -45,8 +45,7 @@ ggplot(newdf, aes(x = Lead.Streams)) + geom_histogram(bins = 30, fill = "blue") 
     labels = label_number(scale_cut = cut_short_scale())
   ) +
   geom_vline(aes(xintercept = median(Lead.Streams)),
-             color = "red", linetype = "dashed", linewidth = 1)
-+
+             color = "red", linetype = "dashed", linewidth = 1) +
   labs(
     title = "Distribution of Streams",
     x = "Streams (log10 scale)",
@@ -58,8 +57,7 @@ ggplot(newdf, aes(x = Feats)) + geom_histogram(bins = 30, fill = "blue") +
     labels = label_number(scale_cut = cut_short_scale())
   ) + 
   geom_vline(aes(xintercept = median(Feats)),
-             color = "red", linetype = "dashed", linewidth = 1)
-  +
+             color = "red", linetype = "dashed", linewidth = 1) +
   labs(
     title = "Distribution of Feats",
     x = "Feats (log10 scale)",
