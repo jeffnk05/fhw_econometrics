@@ -3,17 +3,10 @@
 # earnings = beta_0 + beta_1 * age + beta_2 * educ + beta_3 * height
 # y = -49740.7267 + 333.2802*age + 3945.6465*educ + 441.5084*height + u
 
-# Preis: gleichverteilt (5; 25)
-# Marketingsausgaben: gleichverteilt (0;100)
-# u: NV(0; 12)
-
 # Prof. Dr. Franziska Bönte
 # FH Wedel
 # Ökonometrie
 #------------------------------------------------------------------------
-
-# Indivdiduellen Arbeitspfad wählen
-setwd("C:/Users/fbo/_FH Wedel/Vorlesungen/Master - Ökonometrie/Beispiel_Übungen/Ü2 - Multivariates Lineares Modell")
 
 
 library(readxl)
@@ -25,12 +18,12 @@ Daten <- read_excel("Earnings_and_Height.xlsx")
 # Schätzung des Modells mit Funktion lm()
 #------------------------------------------------------------------------
 
-Modell= lm(Zufriedenheit ~ Kaffeekonsum + Meetings + Teekonsum, data = Daten)
+Modell= lm(earnings ~ age + educ + height, data = Daten)
 
 sm = summary(Modell)
 print(sm)
 
-Daten$Zufriedenheit_hat = fitted(Modell)
+Daten$earnings_hat = fitted(Modell)
 Daten$u_hat = residuals(Modell)
 
 # Q-Q-Plot
@@ -55,22 +48,25 @@ ggplot(Daten, aes(sample = u_hat)) +
 # 3D-Bildchen der Schätzung
 library(plotly)
 
-x_seq <- seq(min(Daten$Kaffeekonsum), max(Daten$Kaffeekonsum), length.out = 30)
-y_seq <- seq(min(Daten$Meetings), max(Daten$Meetings), length.out = 30)
-gitter <- expand.grid(Meetings = y_seq, Kaffeekonsum = x_seq)
-gitter$Zufriedenheit_hat <- predict(Modell, newdata = gitter)
-z_matrix <- matrix(gitter$Zufriedenheit_hat, nrow = length(y_seq), ncol = length(x_seq))
+x_seq <- seq(min(Daten$age), max(Daten$age), length.out = 30)
+y_seq <- seq(min(Daten$educ), max(Daten$educ), length.out = 30)
 
-plot_ly(Daten, x = ~Kaffeekonsum, y = ~Meetings, z = ~Zufriedenheit,
+gitter <- expand.grid(age = y_seq, educ = x_seq)
+gitter$height <- mean(Daten$height)  # height auf Mittelwert fixieren
+
+gitter$earnings_hat <- predict(Modell, newdata = gitter)
+z_matrix <- matrix(gitter$earnings_hat, nrow = length(y_seq), ncol = length(x_seq))
+
+plot_ly(Daten, x = ~age, y = ~educ, z = ~earnings,
         type = "scatter3d", mode = "markers",
         marker = list(size = 3, color = 'darkblue')) %>%
   add_surface(x = ~x_seq, y = ~y_seq, z = ~z_matrix,
               opacity = 0.7, showscale = FALSE,
               colorscale = list(c(0, 1), c("lightblue", "red"))) %>%
   layout(scene = list(
-    xaxis = list(title = "Kaffeekonsum"),
-    yaxis = list(title = "Meetings"),
-    zaxis = list(title = "Zufriedenheit")
+    xaxis = list(title = "Alter"),
+    yaxis = list(title = "Bildung"),
+    zaxis = list(title = "Einkommen")
   ))
 
 
@@ -207,20 +203,28 @@ print(sm)
 # Heteroskedastizität diagnostizieren
 #------------------------------------------------------------------------
 
-# 1. Residuen vs. Kaffeekonsum
-ggplot(Daten, aes(x = Kaffeekonsum, y = u_hat)) +
+# 1. Residuen vs. Alter
+ggplot(Daten, aes(x = age, y = u_hat)) +
   geom_point(color = "darkblue") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   geom_smooth(method = "loess", se = FALSE, color = "orange") +
-  labs(title = "Residuen vs. Kaffeekonsum", y = "Residuen", x = "Kaffeekonsum") +
+  labs(title = "Residuen vs. Alter", y = "Residuen", x = "Alter") +
   theme_minimal()
 
-# 2. Residuen vs. Meetings
-ggplot(Daten, aes(x = Meetings, y = u_hat)) +
+# 2. Residuen vs. Bildung
+ggplot(Daten, aes(x = educ, y = u_hat)) +
   geom_point(color = "darkblue") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   geom_smooth(method = "loess", se = FALSE, color = "orange") +
-  labs(title = "Residuen vs. Meetings", y = "Residuen", x = "Meetings") +
+  labs(title = "Residuen vs. Bildung", y = "Residuen", x = "Bildung") +
+  theme_minimal()
+
+# 3. Residuen vs. Körpergröße
+ggplot(Daten, aes(x = height, y = u_hat)) +
+  geom_point(color = "darkblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  geom_smooth(method = "loess", se = FALSE, color = "orange") +
+  labs(title = "Residuen vs. Körpergröße", y = "Residuen", x = "Körpergröße") +
   theme_minimal()
 
 
