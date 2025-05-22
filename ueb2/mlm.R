@@ -13,7 +13,7 @@
 #------------------------------------------------------------------------
 
 # Indivdiduellen Arbeitspfad wählen
-setwd("C:/Users/fbo/_FH Wedel/Vorlesungen/Master - Ökonometrie/Beispiel_Übungen/Ü2 - Multivariates Lineares Modell")
+#setwd("C:/Users/fbo/_FH Wedel/Vorlesungen/Master - Ökonometrie/Beispiel_Übungen/Ü2 - Multivariates Lineares Modell")
 
 
 library(readxl)
@@ -51,7 +51,7 @@ print(beta_hat)
 
 # Vorhersagen
 y_hat <- X %*% beta_hat
-Daten$Absatzmenge_hat <- y_hat
+Daten$earnings_hat <- y_hat
 
 # Residuen
 u_hat <- y - y_hat
