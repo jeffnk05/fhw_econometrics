@@ -16,6 +16,10 @@ library(readxl)
 # Daten einlesen
 Daten <- read_excel("Earnings_and_Height.xlsx")
 
+# Oder für earnings ~ education  
+Daten$x <- Daten$educ
+Daten$y <- Daten$earnings
+
 # Für earnings ~ age
 Daten$x <- Daten$age
 Daten$y <- Daten$earnings

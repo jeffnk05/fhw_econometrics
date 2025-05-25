@@ -171,32 +171,7 @@ ggplot(data = results, aes(x = .fitted, y = .resid, size = .cooksd)) +
 #------------------------------------------------------------------------
 # Modell korrigieren
 #------------------------------------------------------------------------
-#Modellauswahl mit Regsubsets
-library(leaps) 
-RegDaten = data.frame(Zufriedenheit    = Daten$Zufriedenheit, 
-                      Kaffee     = Daten$Kaffeekonsum, 
-                      Tee = Daten$Teekonsum,
-                      Meetings = Daten$Meetings
-)
 
-best_subset = regsubsets(
-  Zufriedenheit ~ .,
-  data =  RegDaten,
-  nvmax = 3,
-  nbest = 3
-)
-
-summary(best_subset)
-
-plot(best_subset, scale="adjr2", 
-     main="Adjusted R^2")
-
-
-
-Modell= lm(Zufriedenheit ~ Kaffeekonsum + Meetings, data = Daten)
-
-sm = summary(Modell)
-print(sm)
 
 
 #------------------------------------------------------------------------
@@ -277,20 +252,26 @@ jarque.bera.test(rstandard(lm(Modell)))
 # blue line: linearity of parameters lm(...)
 # red line: robust smoothing
 
-#Graph Kaffeekonsum, Zufriedenheit
+#Graph Alter, Einkommen
 par(mfrow=c(2,1))
-ggplot(results, aes(Kaffeekonsum, Zufriedenheit)) + # aes(x, y) 
+ggplot(results, aes(age, earnings)) + # aes(x, y) 
   geom_jitter(alpha = .1) +
   geom_smooth(method = "lm", se = F) +
   geom_smooth(method = "loess", se = F, color = "red") 
 
-#Graph Meetings, Zufriedenheit
-ggplot(results, aes(Meetings, Zufriedenheit)) + # aes(x, y)
+#Graph Bildung, Eikommen
+ggplot(results, aes(educ, earnings)) + # aes(x, y)
   geom_jitter(alpha = .1) +
   geom_smooth(method = "lm", se = F) +
   geom_smooth(method = "loess", se = F, color = "red") 
 par(mfrow=c(1,1))
 
+#Graph Größe, Einkommen
+ggplot(results, aes(height, earnings)) + # aes(x, y)
+  geom_jitter(alpha = .1) +
+  geom_smooth(method = "lm", se = F) +
+  geom_smooth(method = "loess", se = F, color = "red") 
+par(mfrow=c(1,1))
 
 #---------------------------------------------------------------------------------
 # Autocorrelation
