@@ -1,13 +1,12 @@
 #------------------------------------------------------------------------
 # Multivariates Lineares Modell
-# Absatz = beta_0 + beta_1 * Preis + beta_2*Marketingausgaben +u
-# y = 10 -1,5*Preis +1,0*Marketingausgaben + u
+# earnings = beta_0 + beta_1 * age + beta_2 * educ + beta_3 * height
+# y = -49740.7267 + 333.2802*age + 3945.6465*educ + 441.5084*height + u
 
 # Preis: gleichverteilt (5; 25)
 # Marketingsausgaben: gleichverteilt (0;100)
 # u: NV(0; 12)
 
-# Prof. Dr. Franziska Bönte
 # FH Wedel
 # Ökonometrie
 #------------------------------------------------------------------------

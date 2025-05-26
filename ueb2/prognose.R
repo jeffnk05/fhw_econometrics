@@ -1,7 +1,6 @@
 #------------------------------------------------------------------------
 # Prognoseintrevall vs. Konfidenzintervall
 
-# Prof. Dr. Franziska Bönte
 # FH Wedel
 # Ökonometrie
 #------------------------------------------------------------------------
