@@ -421,3 +421,68 @@ gt(info_df) %>%
     style = cell_text(weight = "bold"),
     locations = cells_column_labels(everything())
   )
+
+#------------------------------------------------------------------------
+# test der Annahmen
+#------------------------------------------------------------------------
+
+
+Daten$Stromproduktion_hat = fitted(Modell)
+Daten$u_hat = residuals(Modell)
+
+# Q-Q-Plot
+ggplot(Daten, aes(sample = u_hat)) +
+  stat_qq(color = "steelblue", size = 2) +
+  stat_qq_line(color = "darkred", linewidth = 1) +
+  labs(title = "Q-Q-Plot der Residuen", x = "Theoretische Quantile", y = "Empirische Quantile") +
+  theme_minimal()
+
+# QQ-Plot
+# Vergleich der Verteilung der Residuen des Modells mit einer theoretischen Normalverteilung.
+# Ziel: überprüfen, ob die Residuen annähernd normalverteilt sind
+# x-Achse: Theoretische Quantile einer Normalverteilung
+# y-Achse: Beobachtete Quantile der standardisierten Residuen aus deinem Modell
+# Ziel?
+# Die Punkte sollten entlang der diagonalen Linie verlaufen,das spricht für Normalverteilung der Residuen.
+
+#----------------------------------------------------------------------------------
+# Multicollinearity
+#---------------------------------------------------------------------------------
+library(car)
+
+vif_values <- vif(Modell)
+
+vif_data <- data.frame(
+  Variable = names(vif_values),
+  VIF = as.numeric(vif_values)
+)
+ggplot(vif_data, aes(x = Variable, y = VIF)) +
+  geom_bar(stat = "identity", width = 0.5, fill = "steelblue") +
+  geom_hline(yintercept = 5, linetype = "dashed", color = "orange", alpha = 0.7) +
+  geom_hline(yintercept = 10, linetype = "dashed", color = "red", alpha = 0.7) +
+  annotate("text", x = 1, y = 4.7, label = "good", hjust = 0, vjust = 1, size = 3) +
+  annotate("text", x = 1, y = 9.7, label = "acceptable", hjust = 0, vjust = 1, size = 3) +
+  labs(title = "Variance Inflation Factors (Multicollinearity)",
+       y = "VIF", x = "Regressor") +
+  theme_minimal()
+#
+results %>%
+  arrange(.cooksd) %>%
+  mutate(row_id = 1:n()) %>%
+  select(row_id, .fitted, .resid) %>%
+  top_n(5)
+
+ggplot(data = results, aes(x = .fitted, y = .resid, size = .cooksd)) +
+  geom_hline(yintercept = 0, colour = "firebrick3") +
+  geom_point(alpha = .5) +
+  geom_text(aes(label = rownames(results))) +
+  scale_size_area("Cook's distance")
+
+#------------------------------------------------------------------------
+# Heteroskedastizität diagnostizieren
+#------------------------------------------------------------------------
+
+# Breusch-Pagan-Test
+library(lmtest)
+bptest(Modell)  
+#p-value < 0,05 also Heteroskedastizität
