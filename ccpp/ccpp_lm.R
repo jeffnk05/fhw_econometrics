@@ -265,14 +265,159 @@ corrplot(cor_matrix,
          number.cex = 1  # Textgröße für Korrelationen
 )
 
+#------------------------------------------------------------------------
+# Schätzung des Modells mit Funktion lm()
+#------------------------------------------------------------------------
+
+Modell= lm(PE ~ AT + V + AP + RH, data = Daten)
+
+sm = summary(Modell)
+print(sm)
+
+#------------------------------------------------------------------------
+# Bessere Darstellungen der Summary
+#------------------------------------------------------------------------
+library(gt)
+
+# Koefﬁzienten-Tabelle vorbereiten
+coef_df <- as.data.frame(sm$coefficients)
+coef_df$Variable <- rownames(coef_df)
+coef_df$Interpretation <- ifelse(coef_df$`Pr(>|t|)` <= 0.05, "signifikant", "nicht signifikant")
+
+# Spaltenreihenfolge anpassen
+coef_df <- coef_df[, c("Variable", "Estimate", "Std. Error", "t value", "Pr(>|t|)", "Interpretation")]
+
+# gt-Tabelle erzeugen
+gt(coef_df) %>%
+  tab_header(title = "Regressionskoeffizienten") %>%
+  cols_label(
+    Variable = "Variable",
+    Estimate = "Schätzwert",
+    `Std. Error` = "Standardfehler",
+    `t value` = "t-Wert",
+    `Pr(>|t|)` = "p-Wert",
+    Interpretation = "Interpretation (α = 0,05)"
+  ) %>%
+  fmt_number(
+    columns = c(Estimate, `Std. Error`, `t value`, `Pr(>|t|)`),
+    decimals = 2
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  )
 
 
+# Einzelwerte berechnen
+r2 <- sm$r.squared
+adj_r2 <- sm$adj.r.squared
+sigma <- sm$sigma
+df_model <- sm$df[1]
+df_resid <- sm$df[2]
+fstat <- sm$fstatistic
+f_p <- 1 - pf(fstat["value"], df1 = fstat["numdf"], df2 = fstat["dendf"])
 
+# DataFrame für Zusammenfassung
+info_df <- data.frame(
+  Kennzahl = c("R²", "Adjustiertes R²", "F-Statistik", "p-Wert (F)", "df Modell", "df Residuen", "sigma"),
+  Wert = c(round(r2, 4), round(adj_r2, 4), round(fstat["value"], 4), round(f_p, 4), df_model, df_resid, round(sigma, 4))
+)
 
+# gt-Tabelle
+gt(info_df) %>%
+  tab_header(title = "Modellkennzahlen") %>%
+  fmt_number(columns = "Wert", decimals = 2) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  )
 
+#------------------------------------------------------------------------
+# Graphische Darstellungen
+#------------------------------------------------------------------------
 
+#Modellauswahl mit Regsubsets
+library(leaps) 
+RegDaten = data.frame(Stromproduktion    = Daten$PE, 
+                      Temperatur     = Daten$AT, 
+                      Abluftvakuum = Daten$V,
+                      Umgebungsdruck = Daten$AP,
+                      Luftfeuchtigkeit = Daten$RH)
 
+best_subset = regsubsets(
+  Stromproduktion ~ .,
+  data =  RegDaten,
+  nvmax = 4,
+  nbest = 4
+)
 
+summary(best_subset)
 
+plot(best_subset, scale="adjr2", 
+     main="Adjusted R^2")
 
+#------------------------------------------------------------------------
+# Schätzung des Modells mit Funktion lm() mit weniger Koeffizienten
+#------------------------------------------------------------------------
 
+Modell= lm(PE ~ AT + RH, data = Daten)
+
+sm = summary(Modell)
+print(sm)
+
+#------------------------------------------------------------------------
+# Bessere Darstellungen der Summary
+#------------------------------------------------------------------------
+library(gt)
+
+# Koefﬁzienten-Tabelle vorbereiten
+coef_df <- as.data.frame(sm$coefficients)
+coef_df$Variable <- rownames(coef_df)
+coef_df$Interpretation <- ifelse(coef_df$`Pr(>|t|)` <= 0.05, "signifikant", "nicht signifikant")
+
+# Spaltenreihenfolge anpassen
+coef_df <- coef_df[, c("Variable", "Estimate", "Std. Error", "t value", "Pr(>|t|)", "Interpretation")]
+
+# gt-Tabelle erzeugen
+gt(coef_df) %>%
+  tab_header(title = "Regressionskoeffizienten") %>%
+  cols_label(
+    Variable = "Variable",
+    Estimate = "Schätzwert",
+    `Std. Error` = "Standardfehler",
+    `t value` = "t-Wert",
+    `Pr(>|t|)` = "p-Wert",
+    Interpretation = "Interpretation (α = 0,05)"
+  ) %>%
+  fmt_number(
+    columns = c(Estimate, `Std. Error`, `t value`, `Pr(>|t|)`),
+    decimals = 2
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  )
+
+# Einzelwerte berechnen
+r2 <- sm$r.squared
+adj_r2 <- sm$adj.r.squared
+sigma <- sm$sigma
+df_model <- sm$df[1]
+df_resid <- sm$df[2]
+fstat <- sm$fstatistic
+f_p <- 1 - pf(fstat["value"], df1 = fstat["numdf"], df2 = fstat["dendf"])
+
+# DataFrame für Zusammenfassung
+info_df <- data.frame(
+  Kennzahl = c("R²", "Adjustiertes R²", "F-Statistik", "p-Wert (F)", "df Modell", "df Residuen", "sigma"),
+  Wert = c(round(r2, 4), round(adj_r2, 4), round(fstat["value"], 4), round(f_p, 4), df_model, df_resid, round(sigma, 4))
+)
+
+# gt-Tabelle
+gt(info_df) %>%
+  tab_header(title = "Modellkennzahlen") %>%
+  fmt_number(columns = "Wert", decimals = 2) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  )
