@@ -59,3 +59,108 @@ ggplot(Daten, aes(x = RH, y = PE)) +
     y = "Stromproduktion"
   ) +
   theme_minimal()
+
+#---------------------------------------------------------------
+#Plot Histogramme
+#--------------------------------------------------------------- 
+library(scales) # Für deutsche Zahlenformate
+
+Histo_Temperatur <- 
+  ggplot(Daten, aes(x = AT )) +  
+  geom_histogram(fill = "blue", color = "black") + 
+  labs(title = "Abhängige Variable: \nTemperatur", 
+       x = "Temperatur", 
+       y = "Häufigkeit")+  
+  scale_x_continuous(breaks = seq(0, max(Daten$AT), by = 50), labels = comma_format(big.mark = ".",decimal.mark = ","))+
+  geom_vline(aes(xintercept = mean(AT)), 
+             color = "red", 
+             linetype=1,
+             linewidth = 1)+
+  annotate("text", x = mean(Daten$AT), y = 15, label = "Mittelwert", 
+           angle = 90, vjust = 1.2, colour = "red", size = 3.5) +
+  theme(plot.title = element_text(size = 10, face = "bold")) + # Titel; Schriftgröße: 14, Fettdruck
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=8))
+
+Histo_Abluftvakuum <- 
+  ggplot(Daten, aes(x = V )) +  
+  geom_histogram(fill = "lightgreen", color = "black") + 
+  labs(title = "unahängige Variable: \nAbluftvakuum", 
+       x = "Abluftvakuum", 
+       y = "Häufigkeit")+  
+  scale_x_continuous(breaks = seq(0, max(Daten$V), by = 5), labels = comma_format(big.mark = ".",decimal.mark = ","))+
+  geom_vline(aes(xintercept = mean(V)), 
+             color = "darkred", 
+             linetype=1,
+             linewidth = 1)+
+  annotate("text", x = mean(Daten$V), y = 8, label = "Mittelwert", 
+           angle = 90, vjust = 1.2, colour = "darkred", size = 3.5) +
+  theme(plot.title = element_text(size = 10, face = "bold")) + # Titel; Schriftgröße: 14, Fettdruck
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=8))
+
+Histo_Umgebungsdruck <- 
+  ggplot(Daten, aes(x = AP )) +  
+  geom_histogram(fill = "lightgray", color = "black", binwidth=5) + 
+  labs(title = "unahängige Variable: \nUmgebungsdruck", 
+       x = "Umgebungsdruck", 
+       y = "Häufigkeit")+  
+  scale_x_continuous(breaks = seq(0, max(Daten$AP), by = 25), labels = comma_format(big.mark = ".",decimal.mark = ","))+
+  geom_vline(aes(xintercept = mean(AP)), 
+             color = "darkred", 
+             linetype=1,
+             linewidth = 1)+
+  annotate("text", x = mean(Daten$AP), y = 8, label = "Mittelwert", 
+           angle = 90, vjust = 1.2, colour = "darkred", size = 3.5) +
+  theme(plot.title = element_text(size = 10, face = "bold")) + # Titel; Schriftgröße: 14, Fettdruck
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=8))
+
+Histo_Luftfeuchtigkeit <- 
+  ggplot(Daten, aes(x = RH )) +  
+  geom_histogram(fill = "orange", color = "black", binwidth=5) + 
+  labs(title = "unahängige Variable: \nLuftfeuchtigkeit", 
+       x = "Leuftfeuchtigkeit", 
+       y = "Häufigkeit")+  
+  scale_x_continuous(breaks = seq(0, max(Daten$RH), by = 25), labels = comma_format(big.mark = ".",decimal.mark = ","))+
+  geom_vline(aes(xintercept = mean(RH)), 
+             color = "darkred", 
+             linetype=1,
+             linewidth = 1)+
+  annotate("text", x = mean(Daten$RH), y = 8, label = "Mittelwert", 
+           angle = 90, vjust = 1.2, colour = "darkred", size = 3.5) +
+  theme(plot.title = element_text(size = 10, face = "bold")) + # Titel; Schriftgröße: 14, Fettdruck
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=8))
+
+#4 Create panel out of histograms
+library(multipanelfigure) # mehrere Bildchen in einem Raster anordnen
+
+Histogramme <- multi_panel_figure(rows = 2,
+                                  columns = 2,
+                                  panel_label_type = "none")
+
+# wo soll welches Bild gezeigt werden?
+Histogramme %<>%
+  fill_panel(Histo_Temperatur, row = 1, column = 1) %<>%
+  fill_panel(Histo_Umgebungsdruck,           row = 1, column = 2) %<>%
+  fill_panel(Histo_Luftfeuchtigkeit,        row = 2, column = 1) %<>%
+  fill_panel(Histo_Abluftvakuum,        row = 2, column = 2) 
+
+print(Histogramme)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
