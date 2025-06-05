@@ -224,7 +224,46 @@ Boxplots %<>%
 
 Boxplots
 
+#---------------------------------------------------------------
+#Korrelationen
+#------------------------------------------------------------
+library(vcd) #für Heatmaps und mosaic
+library(tidycomm) #Korrelationen
+library(corrplot) # Korrelationen
 
+
+#Nur die Daten extrahieren, über die Korrelationen gerechnet werden sollen
+Daten_subset = subset(Daten, 
+                      select = c(PE, AT, V, AP, RH))
+
+#Schnell mal die Korrelationsmatrix anschauen
+Daten_subset%>% 
+  correlate() %>% 
+  to_correlation_matrix()
+
+# Visualisieren der Korrelationen von mehreren Variablen
+Daten_subset %>% 
+  correlate() %>%   
+  visualize()
+
+#Heatmap der Korrelatonen: via ggplot2
+
+# 1. Berechnung der Korrelationsmatrix
+cor_matrix <- cor(Daten_subset)
+
+#Heatmap der Korrelatonen: via corrplot
+corrplot(cor_matrix, 
+         method = "square",
+         col = colorRampPalette(c("darkblue", "white", "darkred"))(50),
+         addCoef.col = "black",  # Korrelationskoeffizienten anzeigen
+         cl.pos = "r",  
+         cl.cex = 0.8,
+         tl.col = "black",
+         tl.srt = 45,  
+         title = "Heatmap der Korrelationen", 
+         tl.cex = 0.8,  # Textgröße für Achsenbeschriftungen
+         number.cex = 1  # Textgröße für Korrelationen
+)
 
 
 
