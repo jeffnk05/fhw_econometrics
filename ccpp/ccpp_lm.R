@@ -485,4 +485,5 @@ ggplot(data = results, aes(x = .fitted, y = .resid, size = .cooksd)) +
 # Breusch-Pagan-Test
 library(lmtest)
 bptest(Modell)  
-#p-value < 0,05 also Heteroskedastizität
+#p-value < 0,05 also Heteroskedastizität (bei Modell mit nur AT und RH)
+# p-value > 0.5 bei allgemeinem Modell 
