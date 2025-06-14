@@ -465,12 +465,6 @@ ggplot(vif_data, aes(x = Variable, y = VIF)) +
   labs(title = "Variance Inflation Factors (Multicollinearity)",
        y = "VIF", x = "Regressor") +
   theme_minimal()
-#
-results %>%
-  arrange(.cooksd) %>%
-  mutate(row_id = 1:n()) %>%
-  select(row_id, .fitted, .resid) %>%
-  top_n(5)
 
 ggplot(data = results, aes(x = .fitted, y = .resid, size = .cooksd)) +
   geom_hline(yintercept = 0, colour = "firebrick3") +
@@ -481,9 +475,15 @@ ggplot(data = results, aes(x = .fitted, y = .resid, size = .cooksd)) +
 #------------------------------------------------------------------------
 # Heteroskedastizität diagnostizieren
 #------------------------------------------------------------------------
+#Goldfeld-Quandt Test
+gqtest(lm(Modell), point=0.5, fraction=0, alternative=c("greater", "two.sided", "less"), data=list())
+#p-value 0.1173 > 0,05 also Heteroskedastizität 
 
 # Breusch-Pagan-Test
 library(lmtest)
 bptest(Modell)  
-#p-value < 0,05 also Heteroskedastizität (bei Modell mit nur AT und RH)
-# p-value > 0.5 bei allgemeinem Modell 
+#p-value 0.0005041 < 0,05 also Heteroskedastizität 
+
+#------------------------------------------------------------------------
+# Heteroskedastizität diagnostizieren
+#------------------------------------------------------------------------
