@@ -484,6 +484,174 @@ library(lmtest)
 bptest(Modell)  
 #p-value 0.0005041 < 0,05 also Heteroskedastizität 
 
-#------------------------------------------------------------------------
-# Heteroskedastizität diagnostizieren
-#------------------------------------------------------------------------
+# =============================================================================
+# Modell gewichten
+# =============================================================================
+
+# Vorbereitung: Fitted Values und Residuen berechnen
+fitted_vals <- fitted(Modell)
+residuals_ols <- residuals(Modell)
+
+# OPTION 1: Gewichtung basierend auf fitted values
+# Annahme: Var(u) = σ² * fitted²
+weights_fitted <- 1 / (fitted_vals^2)
+Modell_WLS <- lm(PE ~ RH + AT, data = Daten, weights = weights_fitted)
+
+
+# =============================================================================
+# SCHRITT 4: MODELLE VERGLEICHEN
+# =============================================================================
+
+# Funktion zur Bewertung der Modelle
+evaluate_model <- function(model, name) {
+  # Residuenanalyse
+  res <- residuals(model)
+  fitted <- fitted(model)
+  
+  # R² 
+  r_squared <- summary(model)$r.squared
+  
+  # AIC (für Modellvergleich)
+  aic_val <- AIC(model)
+  
+  # Test auf verbleibende Heteroskedastizität
+  bp_test <- tryCatch({
+    bp_result <- bptest(model)
+    bp_result$p.value
+  }, error = function(e) NA)
+  
+  # Zusammenfassung
+  return(data.frame(
+    Modell = name,
+    R_squared = round(r_squared, 4),
+    AIC = round(aic_val, 2),
+    BP_pvalue = round(bp_test, 4),
+    Heterosked_behoben = ifelse(is.na(bp_test), "Fehler", 
+                                ifelse(bp_test > 0.05, "JA", "NEIN"))
+  ))
+}
+
+# =============================================================================
+# SCHRITT 4: OLS vs WLS1 VERGLEICHEN
+# =============================================================================
+
+# Einfacher Vergleich: nur OLS vs WLS1
+
+# OLS Ergebnisse
+print(summary(Modell))
+
+
+# WLS Ergebnisse  
+cat("WLS-MODELL (Gewichtung: 1/fitted²):\n")
+print(summary(Modell_WLS))
+
+# Test auf verbleibende Heteroskedastizität
+
+# OLS
+bp_ols <- bptest(Modell)
+cat("OLS - Breusch-Pagan Test:\n")
+cat("p-value =", round(bp_ols$p.value, 6))
+if(bp_ols$p.value < 0.05) {
+  cat(" → Heteroskedastizität vorhanden\n")
+} else {
+  cat(" → Keine Heteroskedastizität\n") 
+}
+
+# WLS
+bp_wls <- bptest(Modell_WLS)
+cat("\nWLS1 - Breusch-Pagan Test:\n") 
+cat("p-value =", round(bp_wls$p.value, 6))
+if(bp_wls$p.value < 0.05) {
+  cat(" → Heteroskedastizität NICHT behoben\n")
+} else {
+  cat(" → Heteroskedastizität erfolgreich behoben!\n")
+}
+
+# =============================================================================
+# 1. KOEFFIZIENTEN-VERGLEICH
+# =============================================================================
+
+cat("=== KOEFFIZIENTEN-VERGLEICH ===\n")
+
+# Koeffizienten extrahieren
+coef_ols <- summary(Modell)$coefficients
+coef_wls <- summary(Modell_WLS)$coefficients
+
+# Vergleichstabelle erstellen
+koeff_vergleich <- data.frame(
+  Variable = rownames(coef_ols),
+  
+  # Koeffizienten
+  Beta_OLS = round(coef_ols[, "Estimate"], 4),
+  Beta_WLS = round(coef_wls[, "Estimate"], 4),
+  Beta_Unterschied = round(coef_wls[, "Estimate"] - coef_ols[, "Estimate"], 4),
+  
+  # Standardfehler
+  SE_OLS = round(coef_ols[, "Std. Error"], 4),
+  SE_WLS = round(coef_wls[, "Std. Error"], 4),
+  SE_Veraenderung = round(((coef_wls[, "Std. Error"] - coef_ols[, "Std. Error"]) / 
+                             coef_ols[, "Std. Error"]) * 100, 1),
+  
+  # t-Werte  
+  t_OLS = round(coef_ols[, "t value"], 3),
+  t_WLS = round(coef_wls[, "t value"], 3),
+  
+  # p-Werte
+  p_OLS = round(coef_ols[, "Pr(>|t|)"], 6),
+  p_WLS = round(coef_wls[, "Pr(>|t|)"], 6)
+)
+
+# Spalten umbenennen für bessere Lesbarkeit
+colnames(koeff_vergleich)[7] <- "SE_Veraend_%"
+
+print(koeff_vergleich)
+
+# =============================================================================
+# 2. MODELLGÜTE-VERGLEICH  
+# =============================================================================
+
+cat("\n=== MODELLGÜTE UND DIAGNOSTIK ===\n")
+
+# Tests durchführen
+bp_ols <- bptest(Modell)
+bp_wls <- bptest(Modell_WLS)
+
+# Modellstatistiken
+modell_stats <- data.frame(
+  Metrik = c("R²", "Adjusted R²", "AIC", "BIC", "Residual SE", 
+             "F-Statistik", "F p-value", "BP Test p-value", "Heteroskedastizität"),
+  
+  OLS = c(
+    round(summary(Modell)$r.squared, 4),
+    round(summary(Modell)$adj.r.squared, 4), 
+    round(AIC(Modell), 2),
+    round(BIC(Modell), 2),
+    round(summary(Modell)$sigma, 4),
+    round(summary(Modell)$fstatistic[1], 2),
+    format(pf(summary(Modell)$fstatistic[1], 
+              summary(Modell)$fstatistic[2], 
+              summary(Modell)$fstatistic[3], lower.tail = FALSE), 
+           scientific = TRUE, digits = 3),
+    format(bp_ols$p.value, scientific = TRUE, digits = 3),
+    ifelse(bp_ols$p.value < 0.05, "VORHANDEN", "NICHT vorhanden")
+  ),
+  
+  WLS = c(
+    round(summary(Modell_WLS)$r.squared, 4),
+    round(summary(Modell_WLS)$adj.r.squared, 4),
+    round(AIC(Modell_WLS), 2), 
+    round(BIC(Modell_WLS), 2),
+    round(summary(Modell_WLS)$sigma, 4),
+    round(summary(Modell_WLS)$fstatistic[1], 2),
+    format(pf(summary(Modell_WLS)$fstatistic[1],
+              summary(Modell_WLS)$fstatistic[2],
+              summary(Modell_WLS)$fstatistic[3], lower.tail = FALSE),
+           scientific = TRUE, digits = 3),
+    format(bp_wls$p.value, scientific = TRUE, digits = 3),
+    ifelse(bp_wls$p.value < 0.05, "VORHANDEN", "BEHOBEN!")
+  ),
+  
+  stringsAsFactors = FALSE
+)
+
+print(modell_stats)
