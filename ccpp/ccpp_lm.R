@@ -499,7 +499,7 @@ Modell_WLS <- lm(PE ~ RH + AT, data = Daten, weights = weights_fitted)
 
 
 # =============================================================================
-# SCHRITT 4: MODELLE VERGLEICHEN
+# MODELLE VERGLEICHEN
 # =============================================================================
 
 # Funktion zur Bewertung der Modelle
@@ -532,7 +532,7 @@ evaluate_model <- function(model, name) {
 }
 
 # =============================================================================
-# SCHRITT 4: OLS vs WLS1 VERGLEICHEN
+# SCHRITT 4: OLS vs WLS VERGLEICHEN
 # =============================================================================
 
 # Einfacher Vergleich: nur OLS vs WLS1
@@ -568,90 +568,140 @@ if(bp_wls$p.value < 0.05) {
 }
 
 # =============================================================================
-# 1. KOEFFIZIENTEN-VERGLEICH
+# 1. KOEFFIZIENTEN-VERGLEICH MIT GT
 # =============================================================================
 
 cat("=== KOEFFIZIENTEN-VERGLEICH ===\n")
 
-# Koeffizienten extrahieren
-coef_ols <- summary(Modell)$coefficients
-coef_wls <- summary(Modell_WLS)$coefficients
+# OLS Koeffizienten-Tabelle
+sm_ols <- summary(Modell)
+coef_df_ols <- as.data.frame(sm_ols$coefficients)
+coef_df_ols$Variable <- rownames(coef_df_ols)
+coef_df_ols$Interpretation <- ifelse(coef_df_ols$`Pr(>|t|)` <= 0.05, "signifikant", "nicht signifikant")
+coef_df_ols$Modell <- "OLS"
 
-# Vergleichstabelle erstellen
-koeff_vergleich <- data.frame(
-  Variable = rownames(coef_ols),
-  
-  # Koeffizienten
-  Beta_OLS = round(coef_ols[, "Estimate"], 4),
-  Beta_WLS = round(coef_wls[, "Estimate"], 4),
-  Beta_Unterschied = round(coef_wls[, "Estimate"] - coef_ols[, "Estimate"], 4),
-  
-  # Standardfehler
-  SE_OLS = round(coef_ols[, "Std. Error"], 4),
-  SE_WLS = round(coef_wls[, "Std. Error"], 4),
-  SE_Veraenderung = round(((coef_wls[, "Std. Error"] - coef_ols[, "Std. Error"]) / 
-                             coef_ols[, "Std. Error"]) * 100, 1),
-  
-  # t-Werte  
-  t_OLS = round(coef_ols[, "t value"], 3),
-  t_WLS = round(coef_wls[, "t value"], 3),
-  
-  # p-Werte
-  p_OLS = round(coef_ols[, "Pr(>|t|)"], 6),
-  p_WLS = round(coef_wls[, "Pr(>|t|)"], 6)
+# WLS Koeffizienten-Tabelle  
+sm_wls <- summary(Modell_WLS)
+coef_df_wls <- as.data.frame(sm_wls$coefficients)
+coef_df_wls$Variable <- rownames(coef_df_wls)
+coef_df_wls$Interpretation <- ifelse(coef_df_wls$`Pr(>|t|)` <= 0.05, "signifikant", "nicht signifikant")
+coef_df_wls$Modell <- "WLS (1/fitted²)"
+
+# Kombinierte Tabelle
+coef_combined <- rbind(
+  coef_df_ols[, c("Modell", "Variable", "Estimate", "Std. Error", "t value", "Pr(>|t|)", "Interpretation")],
+  coef_df_wls[, c("Modell", "Variable", "Estimate", "Std. Error", "t value", "Pr(>|t|)", "Interpretation")]
 )
 
-# Spalten umbenennen für bessere Lesbarkeit
-colnames(koeff_vergleich)[7] <- "SE_Veraend_%"
+# GT-Tabelle für Koeffizienten
+gt_coef <- gt(coef_combined) %>%
+  tab_header(title = "Regressionskoeffizienten Vergleich: OLS vs WLS") %>%
+  cols_label(
+    Modell = "Modell",
+    Variable = "Variable", 
+    Estimate = "Schätzwert",
+    `Std. Error` = "Standardfehler",
+    `t value` = "t-Wert",
+    `Pr(>|t|)` = "p-Wert",
+    Interpretation = "Interpretation (α = 0,05)"
+  ) %>%
+  fmt_number(
+    columns = c(Estimate, `Std. Error`, `t value`, `Pr(>|t|)`),
+    decimals = 4
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "lightblue"),
+    locations = cells_body(rows = Modell == "OLS")
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "lightgreen"), 
+    locations = cells_body(rows = Modell == "WLS (1/fitted²)")
+  )
 
-print(koeff_vergleich)
+print(gt_coef)
 
 # =============================================================================
-# 2. MODELLGÜTE-VERGLEICH  
+# 2. MODELLKENNZAHLEN-VERGLEICH MIT GT
 # =============================================================================
 
-cat("\n=== MODELLGÜTE UND DIAGNOSTIK ===\n")
+cat("\n=== MODELLKENNZAHLEN-VERGLEICH ===\n")
 
-# Tests durchführen
+# OLS Kennzahlen
+r2_ols <- sm_ols$r.squared
+adj_r2_ols <- sm_ols$adj.r.squared
+sigma_ols <- sm_ols$sigma
+df_model_ols <- sm_ols$df[1]
+df_resid_ols <- sm_ols$df[2]
+fstat_ols <- sm_ols$fstatistic
+f_p_ols <- 1 - pf(fstat_ols["value"], df1 = fstat_ols["numdf"], df2 = fstat_ols["dendf"])
+aic_ols <- AIC(Modell)
+bic_ols <- BIC(Modell)
+
+# WLS Kennzahlen
+r2_wls <- sm_wls$r.squared
+adj_r2_wls <- sm_wls$adj.r.squared  
+sigma_wls <- sm_wls$sigma
+df_model_wls <- sm_wls$df[1]
+df_resid_wls <- sm_wls$df[2]
+fstat_wls <- sm_wls$fstatistic
+f_p_wls <- 1 - pf(fstat_wls["value"], df1 = fstat_wls["numdf"], df2 = fstat_wls["dendf"])
+aic_wls <- AIC(Modell_WLS)
+bic_wls <- BIC(Modell_WLS)
+
+# Heteroskedastizität-Tests
 bp_ols <- bptest(Modell)
 bp_wls <- bptest(Modell_WLS)
 
-# Modellstatistiken
-modell_stats <- data.frame(
-  Metrik = c("R²", "Adjusted R²", "AIC", "BIC", "Residual SE", 
-             "F-Statistik", "F p-value", "BP Test p-value", "Heteroskedastizität"),
-  
+# DataFrame für Modellkennzahlen
+info_df <- data.frame(
+  Kennzahl = c("R²", "Adjustiertes R²", "F-Statistik", "p-Wert (F)", 
+               "AIC", "BIC", "sigma", "df Modell", "df Residuen",
+               "BP-Test p-Wert", "Heteroskedastizität"),
   OLS = c(
-    round(summary(Modell)$r.squared, 4),
-    round(summary(Modell)$adj.r.squared, 4), 
-    round(AIC(Modell), 2),
-    round(BIC(Modell), 2),
-    round(summary(Modell)$sigma, 4),
-    round(summary(Modell)$fstatistic[1], 2),
-    format(pf(summary(Modell)$fstatistic[1], 
-              summary(Modell)$fstatistic[2], 
-              summary(Modell)$fstatistic[3], lower.tail = FALSE), 
-           scientific = TRUE, digits = 3),
-    format(bp_ols$p.value, scientific = TRUE, digits = 3),
-    ifelse(bp_ols$p.value < 0.05, "VORHANDEN", "NICHT vorhanden")
+    round(r2_ols, 4), round(adj_r2_ols, 4), round(fstat_ols["value"], 4), 
+    round(f_p_ols, 6), round(aic_ols, 2), round(bic_ols, 2), 
+    round(sigma_ols, 4), df_model_ols, df_resid_ols,
+    round(bp_ols$p.value, 6), ifelse(bp_ols$p.value < 0.05, "VORHANDEN", "NICHT vorhanden")
   ),
-  
   WLS = c(
-    round(summary(Modell_WLS)$r.squared, 4),
-    round(summary(Modell_WLS)$adj.r.squared, 4),
-    round(AIC(Modell_WLS), 2), 
-    round(BIC(Modell_WLS), 2),
-    round(summary(Modell_WLS)$sigma, 4),
-    round(summary(Modell_WLS)$fstatistic[1], 2),
-    format(pf(summary(Modell_WLS)$fstatistic[1],
-              summary(Modell_WLS)$fstatistic[2],
-              summary(Modell_WLS)$fstatistic[3], lower.tail = FALSE),
-           scientific = TRUE, digits = 3),
-    format(bp_wls$p.value, scientific = TRUE, digits = 3),
-    ifelse(bp_wls$p.value < 0.05, "VORHANDEN", "BEHOBEN!")
+    round(r2_wls, 4), round(adj_r2_wls, 4), round(fstat_wls["value"], 4),
+    round(f_p_wls, 6), round(aic_wls, 2), round(bic_wls, 2),
+    round(sigma_wls, 4), df_model_wls, df_resid_wls, 
+    round(bp_wls$p.value, 6), ifelse(bp_wls$p.value < 0.05, "VORHANDEN", "BEHOBEN!")
   ),
-  
-  stringsAsFactors = FALSE
+  Unterschied = c(
+    round(r2_wls - r2_ols, 4), round(adj_r2_wls - adj_r2_ols, 4),
+    round(fstat_wls["value"] - fstat_ols["value"], 4), 
+    round(f_p_wls - f_p_ols, 6), round(aic_wls - aic_ols, 2), 
+    round(bic_wls - bic_ols, 2), round(sigma_wls - sigma_ols, 4),
+    df_model_wls - df_model_ols, df_resid_wls - df_resid_ols,
+    round(bp_wls$p.value - bp_ols$p.value, 6), "OLS→WLS")
 )
 
-print(modell_stats)
+# GT-Tabelle für Kennzahlen
+gt_info <- gt(info_df) %>%
+  tab_header(title = "Modellkennzahlen Vergleich: OLS vs WLS") %>%
+  cols_label(
+    Kennzahl = "Kennzahl",
+    OLS = "OLS", 
+    WLS = "WLS (1/fitted²)",
+    Unterschied = "Unterschied (WLS - OLS)"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "lightcoral"),
+    locations = cells_body(rows = Kennzahl == "Heteroskedastizität", columns = "OLS")
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "lightgreen"),
+    locations = cells_body(rows = Kennzahl == "Heteroskedastizität", columns = "WLS")
+  )
+
+print(gt_info)
