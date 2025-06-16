@@ -68,10 +68,9 @@ library(scales) # Für deutsche Zahlenformate
 Histo_Temperatur <- 
   ggplot(Daten, aes(x = AT )) +  
   geom_histogram(fill = "blue", color = "black") + 
-  labs(title = "Abhängige Variable: \nTemperatur", 
+  labs(title = "unabhängige Variable: \nTemperatur", 
        x = "Temperatur", 
        y = "Häufigkeit")+  
-  scale_x_continuous(breaks = seq(0, max(Daten$AT), by = 50), labels = comma_format(big.mark = ".",decimal.mark = ","))+
   geom_vline(aes(xintercept = mean(AT)), 
              color = "red", 
              linetype=1,
@@ -105,7 +104,7 @@ Histo_Umgebungsdruck <-
   labs(title = "unahängige Variable: \nUmgebungsdruck", 
        x = "Umgebungsdruck", 
        y = "Häufigkeit")+  
-  scale_x_continuous(breaks = seq(0, max(Daten$AP), by = 25), labels = comma_format(big.mark = ".",decimal.mark = ","))+
+  scale_x_continuous(breaks = seq(0, max(Daten$AP), by = 10), labels = comma_format(big.mark = ".",decimal.mark = ","))+
   geom_vline(aes(xintercept = mean(AP)), 
              color = "darkred", 
              linetype=1,
@@ -136,7 +135,7 @@ Histo_Luftfeuchtigkeit <-
 Histo_Stromproduktion <- 
   ggplot(Daten, aes(x = PE )) +  
   geom_histogram(fill = "orange", color = "black", binwidth=5) + 
-  labs(title = "unahängige Variable: \nStromproduktion", 
+  labs(title = "Abhängige Variable: \nStromproduktion", 
        x = "Stromproduktion", 
        y = "Häufigkeit")+  
   scale_x_continuous(breaks = seq(0, max(Daten$PE), by = 25), labels = comma_format(big.mark = ".",decimal.mark = ","))+
@@ -490,9 +489,9 @@ bptest(Modell)
 
 # Vorbereitung: Fitted Values und Residuen berechnen
 fitted_vals <- fitted(Modell)
-residuals_ols <- residuals(Modell)
+# residuals_ols <- residuals(Modell)
 
-# OPTION 1: Gewichtung basierend auf fitted values
+# Gewichtung basierend auf fitted values
 # Annahme: Var(u) = σ² * fitted²
 weights_fitted <- 1 / (fitted_vals^2)
 Modell_WLS <- lm(PE ~ RH + AT, data = Daten, weights = weights_fitted)
@@ -703,5 +702,74 @@ gt_info <- gt(info_df) %>%
     style = cell_fill(color = "lightgreen"),
     locations = cells_body(rows = Kennzahl == "Heteroskedastizität", columns = "WLS")
   )
+
+#----------------------------------------------------------------------------
+# Dummy-Variable: Spezielles Ereignis (z. B. hohe Temperatur)
+#----------------------------------------------------------------------------
+Daten$high_temp <- ifelse(Daten$AT > 25, 1, 0)
+
+#----------------------------------------------------------------------------
+# Schätzung des Modells mit Dummy-Variable
+#----------------------------------------------------------------------------
+Modell <- lm(PE ~ AT + V + AP + RH + high_temp, data = Daten)
+
+sm <- summary(Modell)
+print(sm)
+
+#----------------------------------------------------------------------------
+# Tabelle: Regressionskoeffizienten (mit Interpretation)
+#----------------------------------------------------------------------------
+coef_df <- as.data.frame(sm$coefficients)
+coef_df$Variable <- rownames(coef_df)
+coef_df$Interpretation <- ifelse(coef_df$`Pr(>|t|)` <= 0.05, "signifikant", "nicht signifikant")
+
+# Spaltenreihenfolge festlegen
+coef_df <- coef_df[, c("Variable", "Estimate", "Std. Error", "t value", "Pr(>|t|)", "Interpretation")]
+
+# gt-Tabelle erzeugen
+gt(coef_df) %>%
+  tab_header(title = "Regressionskoeffizienten") %>%
+  cols_label(
+    Variable = "Variable",
+    Estimate = "Schätzwert",
+    `Std. Error` = "Standardfehler",
+    `t value` = "t-Wert",
+    `Pr(>|t|)` = "p-Wert",
+    Interpretation = "Interpretation (α = 0,05)"
+  ) %>%
+  fmt_number(columns = c(Estimate, `Std. Error`, `t value`, `Pr(>|t|)`), decimals = 2) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  )
+
+#----------------------------------------------------------------------------
+# Modellkennzahlen berechnen
+#----------------------------------------------------------------------------
+r2 <- sm$r.squared
+adj_r2 <- sm$adj.r.squared
+sigma <- sm$sigma
+df_model <- sm$df[1]
+df_resid <- sm$df[2]
+fstat <- sm$fstatistic
+f_p <- 1 - pf(fstat["value"], df1 = fstat["numdf"], df2 = fstat["dendf"])
+
+# Tabelle der Modellkennzahlen
+info_df <- data.frame(
+  Kennzahl = c("R²", "Adjustiertes R²", "F-Statistik", "p-Wert (F)", "df Modell", "df Residuen", "sigma"),
+  Wert = c(round(r2, 4), round(adj_r2, 4), round(fstat["value"], 4), round(f_p, 4), df_model, df_resid, round(sigma, 4))
+)
+
+# gt-Tabelle für Modellkennzahlen
+gt(info_df) %>%
+  tab_header(title = "Modellkennzahlen") %>%
+  fmt_number(columns = "Wert", decimals = 2) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  )
+
+
+
 
 print(gt_info)
